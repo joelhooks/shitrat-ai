@@ -98,6 +98,12 @@
 
   <blockquote>Having state in your program is never simple, because it has a fundamental complecting that goes on in its artifacts. It complects value and time.</blockquote>
 
+  <div class="video-embed">
+    <iframe src="https://www.youtube-nocookie.com/embed/SxdOUGdseq4" title="Simple Made Easy by Rich Hickey" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+  </div>
+
+  <p class="video-caption"><a href="https://www.youtube.com/watch?v=SxdOUGdseq4">Watch Simple Made Easy</a>, Rich Hickey's 2011 Strange Loop talk.</p>
+
   <p>Our <code>held</code> slot did exactly that. It told us a value without telling us when that value was true or which contract made it true.</p>
 
   <p><a href="https://github.com/matthiasn/talk-transcripts/blob/master/Hickey_Rich/ValueOfValuesLong.md">The Value of Values</a> sharpens the point. Facts do not change. A new fact does not edit yesterday. It joins the record with a later time.</p>
@@ -174,6 +180,22 @@
   <p>The current system also shows what Ousterhout calls <em>temporal decomposition</em>. Code was organized around when work happened: detect, compare, stage, preview, apply. But contract knowledge was needed at several points in that timeline. Organizing by time scattered one piece of knowledge across the lifecycle.</p>
 
   <p>XState should show the order. Module boundaries should show who owns the knowledge.</p>
+
+  <h2>greg young: make the wrong model cheap to delete</h2>
+
+  <p><a href="https://x.com/kandros5591/status/2090846748054901142">Jaga Santagostino</a> sent us Greg Young's <a href="https://www.youtube.com/watch?v=1FPsJ-if2RU&t=1s">The Art of Destroying Software</a> after reading this article. It names the replacement strategy better than I did.</p>
+
+  <blockquote>What if you were to optimize from the very beginning to be able to delete code?</blockquote>
+
+  <div class="video-embed">
+    <iframe src="https://www.youtube-nocookie.com/embed/1FPsJ-if2RU" title="The Art of Destroying Software by Greg Young" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+  </div>
+
+  <p class="video-caption"><a href="https://www.youtube.com/watch?v=1FPsJ-if2RU&t=1s">Watch The Art of Destroying Software</a> by Greg Young.</p>
+
+  <p>Young's rule of thumb is blunt: a component should take no more than about one week to rewrite. The number is not doctrine. It forces the boundary question. If a wrong model cannot be replaced in a week, which knowledge did we smear across the system?</p>
+
+  <p>That sharpens this replacement: preserve behavior and receipts, then make the implementation disposable. Do not predict every future contract. Build a seam that lets us replace the model when the future proves it wrong.</p>
 
   <h2>ddd: a projection is not the aggregate</h2>
 
@@ -275,7 +297,8 @@ Propose the smallest deep replacement, show what it deletes, and name the remain
   <h2>sources</h2>
 
   <ul class="sources">
-    <li><a href="https://github.com/matthiasn/talk-transcripts/blob/master/Hickey_Rich/SimpleMadeEasy-mostly-text.md">Rich Hickey, Simple Made Easy</a></li>
+    <li><a href="https://www.youtube.com/watch?v=SxdOUGdseq4">Rich Hickey, Simple Made Easy</a> and its <a href="https://github.com/matthiasn/talk-transcripts/blob/master/Hickey_Rich/SimpleMadeEasy-mostly-text.md">transcript</a></li>
+    <li><a href="https://www.youtube.com/watch?v=1FPsJ-if2RU&t=1s">Greg Young, The Art of Destroying Software</a></li>
     <li><a href="https://github.com/matthiasn/talk-transcripts/blob/master/Hickey_Rich/ValueOfValuesLong.md">Rich Hickey, The Value of Values</a></li>
     <li><a href="https://github.com/matthiasn/talk-transcripts/blob/master/Hickey_Rich/AreWeThereYet-mostly-text.md">Rich Hickey, Are We There Yet?</a></li>
     <li><a href="https://www.case-podcast.org/20-problem-solving-and-clojure-19-with-rich-hickey/transcript">Rich Hickey on contract evolution and compatibility</a></li>
