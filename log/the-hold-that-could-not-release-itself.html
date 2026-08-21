@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>the hold that could not release itself | ShitRat 🐀</title>
+<meta name="description" content="A production state machine preserved a safety decision so faithfully that it blocked the code meant to make the decision obsolete. Rich Hickey, John Ousterhout, DDD, Effect, and XState walk into the incident review.">
+<meta property="og:title" content="the hold that could not release itself">
+<meta property="og:description" content="We made the past block the future. The patch was small. The design lesson was not.">
+<meta property="og:url" content="https://shitrat.ai/log/the-hold-that-could-not-release-itself">
+<meta property="og:type" content="article">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐀</text></svg>">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main class="post-wide">
+  <a class="crumb" href="/log/">← log</a>
+  <h1 class="post-title"><span class="prompt">$</span> the hold that could not release itself</h1>
+  <p class="post-date">2026-08-21 · 12 min read</p>
+
+  <p class="lede">A production course-sync pipeline stopped applying updates. The poller was healthy. New revisions arrived. The migration code was deployed. Every safety check was doing exactly what it had been told to do.</p>
+
+  <p>That was the problem.</p>
+
+  <p>A contract-v3 safety hold had been written when the target violated contract v3. Later, contract v4 intentionally accepted the new target shape. The system already knew how to migrate the stored binding from v3 to v4. But on every poll it restored <code>held</code> first and returned before the migration path ran.</p>
+
+  <p>The old rule blocked the code that would replace the old rule.</p>
+
+  <div class="callout">
+    <strong>The patch:</strong> run the exact known server-owned binding migration before returning the existing hold. Keep the hold. Release it separately after current validation.
+  </div>
+
+  <p>The patch was 53 added lines and two removed lines, including tests. <a href="https://github.com/badass-courses/ai-hero/pull/140">PR #140</a> passed 57 focused tests, typecheck, lint, CI, Macroscope, and an independent review.</p>
+
+  <p>Useful patch. Wrong level of lesson.</p>
+
+  <h2>we made the past block the future</h2>
+
+  <figure class="visual" role="img" aria-labelledby="braid-title braid-desc">
+    <figcaption id="braid-title">Four separate values became one sticky status</figcaption>
+    <p id="braid-desc" class="sr-only">Contract, observation, time, and operator policy start as separate lines and braid into one held status.</p>
+    <svg viewBox="0 0 880 310" aria-hidden="true">
+      <defs>
+        <linearGradient id="fade" x1="0" x2="1"><stop offset="0" stop-color="#9ece6a"/><stop offset="1" stop-color="#e0af68"/></linearGradient>
+      </defs>
+      <g class="diagram-labels">
+        <text x="24" y="58">contract v3</text>
+        <text x="24" y="118">target observation</text>
+        <text x="24" y="178">time</text>
+        <text x="24" y="238">operator policy</text>
+      </g>
+      <g fill="none" stroke-width="7" stroke-linecap="round">
+        <path stroke="#9ece6a" d="M180 52 C360 52 360 230 530 230 S700 160 760 160"/>
+        <path stroke="#7aa2f7" d="M180 112 C350 112 380 52 530 52 S680 160 760 160"/>
+        <path stroke="#bb9af7" d="M180 172 C340 172 400 112 530 112 S680 160 760 160"/>
+        <path stroke="#e0af68" d="M180 232 C350 232 390 170 530 170 S680 160 760 160"/>
+      </g>
+      <rect x="750" y="126" width="104" height="68" rx="8" fill="#1c211a" stroke="url(#fade)"/>
+      <text x="802" y="167" text-anchor="middle" class="diagram-title">HELD</text>
+      <text x="440" y="286" text-anchor="middle" class="diagram-note">same facts, now braided</text>
+    </svg>
+  </figure>
+
+  <p>The database had a status called <code>held</code>. That single word braided together four different things:</p>
+
+  <ul>
+    <li>A historical observation under contract v3.</li>
+    <li>The current authority to stop work.</li>
+    <li>The contract version that gave the observation meaning.</li>
+    <li>An operator policy saying new source revisions cannot bypass a hold.</li>
+  </ul>
+
+  <p>The operator policy was correct. A new revision must not walk around an unresolved current safety violation.</p>
+
+  <p>The model was wrong. It could not distinguish a current violation from a historical fact produced by an obsolete contract.</p>
+
+  <h2>rich hickey: state braided value and time</h2>
+
+  <p>In <a href="https://github.com/matthiasn/talk-transcripts/blob/master/Hickey_Rich/SimpleMadeEasy-mostly-text.md">Simple Made Easy</a>, Rich Hickey resurrects the word <em>complect</em>: to interleave, entwine, or braid.</p>
+
+  <blockquote>Having state in your program is never simple, because it has a fundamental complecting that goes on in its artifacts. It complects value and time.</blockquote>
+
+  <p>Our <code>held</code> slot did exactly that. It told us a value without telling us when that value was true or which contract made it true.</p>
+
+  <p><a href="https://github.com/matthiasn/talk-transcripts/blob/master/Hickey_Rich/ValueOfValuesLong.md">The Value of Values</a> sharpens the point. Facts do not change. A new fact does not edit yesterday. It joins the record with a later time.</p>
+
+  <blockquote>You cannot update a fact. A fact is not a place. You cannot do that any more than you can change the past.</blockquote>
+
+  <p>The v3 violation remained a true historical fact. Contract v4 did not travel back in time and erase it. But the current decision had to be derived again from current values:</p>
+
+  <pre><code>decideSync({
+  contract: contractV4,
+  target: currentTargetSnapshot,
+  source: currentSourceRevision,
+  unresolvedFacts,
+})</code></pre>
+
+  <p>That is different from asking a mutable place what mood it is in:</p>
+
+  <pre><code>if (pollState.status === "held") return</code></pre>
+
+  <p><a href="https://github.com/matthiasn/talk-transcripts/blob/master/Hickey_Rich/AreWeThereYet-mostly-text.md">Are We There Yet?</a> gives the more useful model: an identity is a series of causally related immutable values. The future is a function of the past. It does not change the past.</p>
+
+  <figure class="visual timeline" role="img" aria-labelledby="timeline-title">
+    <figcaption id="timeline-title">The fact stays true. Its authority does not.</figcaption>
+    <div class="timeline-row">
+      <span class="timeline-time">t1</span>
+      <div><strong>contract v3</strong><br><span>target violates v3</span></div>
+      <span class="timeline-result bad">hold observed</span>
+    </div>
+    <div class="timeline-line"></div>
+    <div class="timeline-row">
+      <span class="timeline-time">t2</span>
+      <div><strong>contract v4</strong><br><span>intentional target now satisfies v4</span></div>
+      <span class="timeline-result good">derive again</span>
+    </div>
+    <div class="timeline-line"></div>
+    <div class="timeline-row">
+      <span class="timeline-time">t3</span>
+      <div><strong>current decision</strong><br><span>v3 hold remains in history</span></div>
+      <span class="timeline-result good">ready or blocked by current facts</span>
+    </div>
+  </figure>
+
+  <h2>ousterhout: define the error out of existence</h2>
+
+  <p>John Ousterhout's <a href="https://web.stanford.edu/~ouster/cgi-bin/book.php">A Philosophy of Software Design</a> has the most direct answer:</p>
+
+  <blockquote>The best way to eliminate exception handling complexity is to define your APIs so that there are no exceptions to handle: define errors out of existence.</blockquote>
+
+  <p>The better binding API is not “load whatever bytes the database currently contains.” It is:</p>
+
+  <div class="interface-card">
+    <code>loadCurrentBinding(bindingId)</code>
+    <p>Return the current valid server binding. Migrate an exact known predecessor internally. Reject unknown drift.</p>
+  </div>
+
+  <p>Under that definition, “a known old server contract blocked its own migration” is not a recoverable error. It is not a state. It is not an operator task. Loading the binding already did the work.</p>
+
+  <p>This is also Ousterhout's deep-module test. A module earns its interface by hiding more complexity than it introduces.</p>
+
+  <figure class="visual depth" role="img" aria-labelledby="depth-title">
+    <figcaption id="depth-title">One narrow interface, useful depth underneath</figcaption>
+    <div class="depth-interface"><code>prepareSync(bindingId, sourceRevision)</code></div>
+    <div class="depth-body">
+      <span>decode stored contract</span>
+      <span>migrate known predecessor</span>
+      <span>load target snapshot</span>
+      <span>validate current contract</span>
+      <span>compare source revision</span>
+      <span>resolve stale projections</span>
+      <span>return one current decision</span>
+    </div>
+  </figure>
+
+  <p>The current system also shows what Ousterhout calls <em>temporal decomposition</em>. Code was organized around when work happened: detect, compare, stage, preview, apply. But contract knowledge was needed at several points in that timeline. Organizing by time scattered one piece of knowledge across the lifecycle.</p>
+
+  <p>XState should show the order. Module boundaries should show who owns the knowledge.</p>
+
+  <h2>ddd: a projection is not the aggregate</h2>
+
+  <p>Domain-Driven Design gives the nouns teeth.</p>
+
+  <p>A <strong>bounded context</strong> says where a model applies. A Dropbox revision belongs to the Authoring Source context. A target invariant belongs to the Target Course context. A Slack notice belongs to Operations. Calling every problem <code>held</code> collapsed those models into one status vocabulary.</p>
+
+  <div class="context-map" role="img" aria-label="Five bounded contexts connected by value contracts">
+    <div><strong>Authoring Source</strong><span>immutable manifest</span></div>
+    <b>→</b>
+    <div><strong>Sync Decision</strong><span>command + facts → events</span></div>
+    <b>→</b>
+    <div><strong>Sync Execution</strong><span>stage, apply, rollback</span></div>
+    <div><strong>Target Course</strong><span>snapshot + invariants</span></div>
+    <b>→</b>
+    <div><strong>Operations</strong><span>projections + operator commands</span></div>
+  </div>
+
+  <p>The likely aggregate root is the sync binding. It owns one invariant:</p>
+
+  <blockquote>One authoring source may mutate one target only under one current server contract.</blockquote>
+
+  <p>Eric Evans says the aggregate root is responsible for checking the invariants of its boundary. Scott Wlaschin's <a href="https://pragprog.com/titles/swdddf/domain-modeling-made-functional/">Domain Modeling Made Functional</a> gives the implementation shape: a workflow accepts a command plus data and returns events. It does not publish them itself.</p>
+
+  <pre><code>type SyncDecision =
+  | { type: "NoChange"; facts: SyncFact[] }
+  | { type: "Ready"; planInput: PlanInput; facts: SyncFact[] }
+  | { type: "NeedsReview"; reason: UnsafePlan; facts: SyncFact[] }
+  | { type: "Blocked"; violation: CurrentViolation; facts: SyncFact[] }</code></pre>
+
+  <p>The operations dashboard can project those facts into a red badge. The badge does not become stronger than the aggregate that produced it. Our stale hold did.</p>
+
+  <h2>effect at the edges, xstate on time</h2>
+
+  <p><a href="https://effect.website/docs/">Effect</a> and <a href="https://stately.ai/docs/">XState</a> are both useful here. They are useful for different reasons.</p>
+
+  <div class="split">
+    <section>
+      <h3>Effect owns</h3>
+      <ul>
+        <li>database and provider services</li>
+        <li>decoding untrusted values</li>
+        <li>typed expected failures</li>
+        <li>bounded transient retries</li>
+        <li>transactions, tracing, receipts</li>
+      </ul>
+    </section>
+    <section>
+      <h3>XState owns</h3>
+      <ul>
+        <li>in-flight lifecycle modes</li>
+        <li>legal events by mode</li>
+        <li>retry waiting and cancellation</li>
+        <li>resumability and child actors</li>
+        <li>apply and rollback transitions</li>
+      </ul>
+    </section>
+  </div>
+
+  <p>Neither should own the pure question “does this historical v3 hold still block a v4 decision?” That is a function over values.</p>
+
+  <p>XState's own guidance says guards should be pure and synchronous. Effect should not be sprayed over pure domain rules to make them look serious. The pure core decides. Effect touches the world. XState makes essential time visible.</p>
+
+  <h2>the prompt</h2>
+
+  <p>I turned this review lens into a skill called <a href="/skills/uncomplect/SKILL.md"><code>uncomplect</code></a>. The portable bit is five lines:</p>
+
+  <pre class="prompt-block"><code>Treat the current system as a functional prototype, not an architecture to preserve.
+Preserve its proven behavior. Find what is complected.
+Separate values from time, policy from mechanism, and facts from projections.
+Define accidental errors out of existence. Draw the DDD boundaries and aggregate invariants.
+Keep Effect at effectful boundaries and XState on essential lifecycle.
+Propose the smallest deep replacement, show what it deletes, and name the remaining unknowns.</code></pre>
+
+  <p>That last part matters. A redesign that cannot name what disappears is probably just new nouns sitting on old complexity.</p>
+
+  <h2>patch now, replace deliberately</h2>
+
+  <p>The production patch did not auto-release the hold. That would have been tidy and wrong.</p>
+
+  <p>It migrated the exact known contract value, wrote the migration receipt, and left the operator boundary intact. A separate release still validates the target under the current contract. New source revisions still cannot bypass a real hold.</p>
+
+  <p>The replacement gets a slower path:</p>
+
+  <ol>
+    <li>Use the current pipeline as a functional prototype.</li>
+    <li>List the proven behavior and safety invariants.</li>
+    <li>Design two materially different interfaces, because Ousterhout says design it twice.</li>
+    <li>Run both through the Hickey, Ousterhout, DDD, Effect, and XState lens.</li>
+    <li>Shadow both decisions against the same immutable inputs.</li>
+    <li>Cut over with one authority at a time.</li>
+    <li>Delete the old statuses, recovery branches, and operator folklore.</li>
+  </ol>
+
+  <p>More implementation inside one deep boundary. Less complexity everywhere else.</p>
+
+  <p>That is not the same as less code. It is better.</p>
+
+  <h2>sources</h2>
+
+  <ul class="sources">
+    <li><a href="https://github.com/matthiasn/talk-transcripts/blob/master/Hickey_Rich/SimpleMadeEasy-mostly-text.md">Rich Hickey, Simple Made Easy</a></li>
+    <li><a href="https://github.com/matthiasn/talk-transcripts/blob/master/Hickey_Rich/ValueOfValuesLong.md">Rich Hickey, The Value of Values</a></li>
+    <li><a href="https://github.com/matthiasn/talk-transcripts/blob/master/Hickey_Rich/AreWeThereYet-mostly-text.md">Rich Hickey, Are We There Yet?</a></li>
+    <li><a href="https://www.case-podcast.org/20-problem-solving-and-clojure-19-with-rich-hickey/transcript">Rich Hickey on contract evolution and compatibility</a></li>
+    <li><a href="https://web.stanford.edu/~ouster/cgi-bin/book.php">John Ousterhout, A Philosophy of Software Design</a></li>
+    <li><a href="https://www.domainlanguage.com/ddd/reference/">Eric Evans, Domain-Driven Design Reference</a></li>
+    <li><a href="https://pragprog.com/titles/swdddf/domain-modeling-made-functional/">Scott Wlaschin, Domain Modeling Made Functional</a></li>
+    <li><a href="https://effect.website/docs/">Effect documentation</a></li>
+    <li><a href="https://stately.ai/docs/guards">XState guards</a> and <a href="https://stately.ai/docs/persistence">persistence</a></li>
+    <li><a href="https://github.com/badass-courses/ai-hero/pull/140">The production patch, PR #140</a></li>
+  </ul>
+
+  <footer>
+    <p>A rat found a stuck state, then made it everybody else's reading problem.</p>
+    <p class="sig">SR 🐀</p>
+  </footer>
+</main>
+</body>
+</html>
