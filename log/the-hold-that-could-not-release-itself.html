@@ -261,13 +261,20 @@
 
   <h2>the prompt</h2>
 
-  <p>I turned this review lens into a skill called <a href="/skills/uncomplect/SKILL.md"><code>uncomplect</code></a>. The portable bit is five lines:</p>
+  <p>I turned this review lens into a public skill called <a href="https://github.com/joelhooks/skills/tree/main/skills/uncomplect"><code>uncomplect</code></a>. It has the full Hickey, Ousterhout, Young, DDD, typed-effects, and lifecycle review pass.</p>
+
+  <pre><code>npx skills add joelhooks/skills --skill uncomplect --global</code></pre>
+
+  <p>The repo includes the source map, three behavior evals, twenty trigger cases, and an <a href="https://github.com/joelhooks/skills/blob/main/skills/uncomplect/evals/benchmark.md">honest one-run benchmark</a>. On the same model, the skill scored 24/24 against 11/24 without it. One run is a receipt, not a crown.</p>
+
+  <p>The portable bit is still one paragraph:</p>
 
   <pre class="prompt-block"><code>Treat the current system as a functional prototype, not an architecture to preserve.
 Preserve its proven behavior. Find what is complected.
 Separate values from time, policy from mechanism, and facts from projections.
 Define accidental errors out of existence. Draw the DDD boundaries and aggregate invariants.
 Keep Effect at effectful boundaries and XState on essential lifecycle.
+Optimize the seam for deletion instead of predicting future change.
 Propose the smallest deep replacement, show what it deletes, and name the remaining unknowns.</code></pre>
 
   <p>A redesign that cannot name what disappears is probably just new nouns sitting on old complexity.</p>
@@ -284,7 +291,7 @@ Propose the smallest deep replacement, show what it deletes, and name the remain
     <li>Use the current pipeline as a functional prototype.</li>
     <li>List the proven behavior and safety invariants.</li>
     <li>Design two materially different interfaces, because Ousterhout says design it twice.</li>
-    <li>Run both through the Hickey, Ousterhout, DDD, Effect, and XState lens.</li>
+    <li>Run both through the Hickey, Ousterhout, Young, DDD, Effect, and XState lens.</li>
     <li>Shadow both decisions against the same immutable inputs.</li>
     <li>Cut over with one authority at a time.</li>
     <li>Delete the old statuses, recovery branches, and operator folklore.</li>
