@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">The hold that could not release itself</title>
+  <desc id="desc">Four historical values braid into one held status beside the article title.</desc>
+  <rect width="1200" height="630" fill="#0d0f0c"/>
+  <rect x="1" y="1" width="1198" height="628" fill="none" stroke="#22261f" stroke-width="2"/>
+
+  <text x="70" y="78" fill="#9ece6a" font-family="SFMono-Regular, Menlo, monospace" font-size="24" font-weight="700" letter-spacing="2">SHITRAT.AI / LOG</text>
+
+  <text x="68" y="172" fill="#ffffff" font-family="SFMono-Semibold, Menlo, monospace" font-size="58" font-weight="700" letter-spacing="-2">the hold that could</text>
+  <text x="68" y="244" fill="#ffffff" font-family="SFMono-Semibold, Menlo, monospace" font-size="58" font-weight="700" letter-spacing="-2">not release itself</text>
+
+  <text x="70" y="352" fill="#9aa291" font-family="SFMono-Regular, Menlo, monospace" font-size="27">A true fact from yesterday became</text>
+  <text x="70" y="394" fill="#9aa291" font-family="SFMono-Regular, Menlo, monospace" font-size="27">a command that could govern forever.</text>
+
+  <line x1="70" y1="490" x2="650" y2="490" stroke="#22261f" stroke-width="2"/>
+  <text x="70" y="548" fill="#9ece6a" font-family="SFMono-Regular, Menlo, monospace" font-size="25">facts ≠ authority</text>
+  <text x="70" y="586" fill="#6f7769" font-family="SFMono-Regular, Menlo, monospace" font-size="18">preserve history. derive the present.</text>
+
+  <g transform="translate(735 112)">
+    <text x="0" y="16" fill="#6f7769" font-family="SFMono-Regular, Menlo, monospace" font-size="16" letter-spacing="1">PAST VALUES</text>
+
+    <g fill="#8a9283" font-family="SFMono-Regular, Menlo, monospace" font-size="17">
+      <text x="0" y="92">contract</text>
+      <text x="0" y="164">observation</text>
+      <text x="0" y="236">time</text>
+      <text x="0" y="308">policy</text>
+    </g>
+
+    <g fill="none" stroke-width="9" stroke-linecap="round">
+      <path d="M122 86 C220 86 218 250 300 250" stroke="#9ece6a"/>
+      <path d="M122 158 C210 158 224 218 300 250" stroke="#7aa2f7"/>
+      <path d="M122 230 C210 230 230 246 300 250" stroke="#bb9af7"/>
+      <path d="M122 302 C218 302 220 258 300 250" stroke="#e0af68"/>
+    </g>
+
+    <rect x="287" y="207" width="150" height="86" rx="10" fill="#151913" stroke="#9ece6a" stroke-width="2"/>
+    <text x="362" y="260" fill="#ffffff" text-anchor="middle" font-family="SFMono-Semibold, Menlo, monospace" font-size="29" font-weight="700">HELD</text>
+
+    <path d="M362 313 L362 377" stroke="#f7768e" stroke-width="4" stroke-dasharray="7 8"/>
+    <path d="M347 363 L362 380 L377 363" fill="none" stroke="#f7768e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="362" y="418" fill="#f7768e" text-anchor="middle" font-family="SFMono-Regular, Menlo, monospace" font-size="18">MIGRATION BLOCKED</text>
+  </g>
+</svg>
